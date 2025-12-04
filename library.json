@@ -1,0 +1,25 @@
+{
+  "name": "ESP32-EthernetManager",
+  "version": "0.1.0",
+  "description": "ESP32 Ethernet manager for LAN8720A PHY with connection state machine and event handling",
+  "keywords": ["ethernet", "esp32", "network", "lan8720a", "phy", "dhcp", "static-ip"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/packerlschupfer/ESP32-EthernetManager.git"
+  },
+  "authors": [
+    {
+      "name": "packerlschupfer",
+      "email": "packerlschupfer@noreply.github.com",
+      "maintainer": true
+    }
+  ],
+  "homepage": "https://github.com/packerlschupfer/ESP32-EthernetManager",
+  "license": "GPL-3",
+  "dependencies": {
+    "ESP32-MutexGuard": "https://github.com/packerlschupfer/ESP32-MutexGuard.git",
+    "ESP32-LibraryCommon": "https://github.com/packerlschupfer/ESP32-LibraryCommon.git"
+  },
+  "frameworks": ["arduino", "espidf"],
+  "platforms": ["espressif32"]
+}
