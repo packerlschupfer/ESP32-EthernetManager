@@ -22,7 +22,8 @@
 
 #include <Arduino.h>
 #include <Logger.h>
-#include <LogInterfaceImpl.h>  // Required ONCE in main application
+// LogInterfaceImpl.cpp is automatically compiled by the Logger library when
+// USE_CUSTOM_LOGGER is defined; no extra include is required here.
 #include <EthernetManager.h>
 
 void setup() {
@@ -39,7 +40,7 @@ void setup() {
     // Configure EthernetManager using the builder pattern
     EthernetConfig config = EthernetConfig()
         .withHostname("esp32-custom-logger")
-        .withAutoReconnect(true, 0, 1000, 30000)
+        .withAutoReconnect(0, 1000, 30000)
         .withLinkMonitoring(1000);
     
     // Initialize Ethernet
@@ -49,7 +50,7 @@ void setup() {
     
     if (!result.isOk()) {
         Serial.print("Ethernet initialization failed! Error: ");
-        Serial.println(EthernetManager::errorToString(result.error));
+        Serial.println(EthernetManager::errorToString(result.error()));
         return;
     }
     
