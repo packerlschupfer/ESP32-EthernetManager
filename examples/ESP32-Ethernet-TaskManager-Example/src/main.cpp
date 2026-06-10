@@ -14,7 +14,8 @@
 
 // Include external libraries
 #include <Logger.h>
-#include <LogInterfaceImpl.h>  // Provides the custom logger implementation
+// LogInterfaceImpl.cpp is automatically compiled by the Logger library when
+// USE_CUSTOM_LOGGER is defined; no extra include is required here.
 #include <SemaphoreGuard.h>
 #include <TaskManagerConfig.h>  // Use TaskManager config header instead of direct include
 

@@ -22,7 +22,8 @@
 
 #include <Arduino.h>
 #include <Logger.h>
-#include <LogInterfaceImpl.h>  // Required ONCE in main application
+// LogInterfaceImpl.cpp is automatically compiled by the Logger library when
+// USE_CUSTOM_LOGGER is defined; no extra include is required here.
 #include <EthernetManager.h>
 
 void setup() {
