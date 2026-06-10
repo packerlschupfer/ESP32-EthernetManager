@@ -86,19 +86,23 @@ void setup() {
         LOG_WARN(LOG_TAG_MAIN, "Ethernet setup failed - OTA will not start unless reconnected");
     }
 
-// Initialize task manager for debugging if enabled
-#ifdef CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS
-    TaskManager::WatchdogConfig debugWdtConfig = TaskManager::WatchdogConfig::disabled();
-    taskManager.startTask(&TaskManager::debugTask, "DebugTask", 4096, 1, "DBG",
-                          &taskManager.debugTaskHandle, debugWdtConfig);
-    taskManager.setTaskExecutionInterval(5000);
+// Initialize task manager for debugging if enabled.
+// The debug task is built into TaskManager (TM_ENABLE_DEBUG_TASK); start it via
+// its static wrapper. setTaskExecutionInterval() was removed; the resource log
+// period is the current knob for how often the debug task reports.
+#if defined(CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS) && TM_ENABLE_DEBUG_TASK
+    (void)taskManager.startTask(&TaskManager::debugTaskWrapper, "DebugTask", 4096,
+                                &taskManager, 1,
+                                TaskManager::WatchdogConfig::disabled());
     taskManager.setResourceLogPeriod(30000);
 #endif
 
-    // Register loopTask with watchdog (critical task, 10s interval)
+    // Register the current (loop) task with the watchdog (critical, 10s interval).
+    // configureTaskWatchdog() is now private; registerCurrentTaskWithWatchdog() is
+    // the public API for registering the running task.
     TaskManager::WatchdogConfig loopWdtConfig = TaskManager::WatchdogConfig::enabled(true, 10000);
-    if (!taskManager.configureTaskWatchdog("loopTask", loopWdtConfig)) {
-        LOG_WARN(LOG_TAG_MAIN, "Failed to configure watchdog for loopTask");
+    if (!taskManager.registerCurrentTaskWithWatchdog("loopTask", loopWdtConfig)) {
+        LOG_WARN(LOG_TAG_MAIN, "Failed to register loopTask with watchdog");
     } else {
         LOG_INFO(LOG_TAG_MAIN, "Watchdog configured for loopTask");
     }
@@ -165,17 +169,12 @@ bool setupEthernet() {
             return false;
         }
 
-        // Start OTA task
+        // Start OTA task. The OTA task registers itself with the watchdog from
+        // within its own task context (see OTATask::taskFunction ->
+        // registerCurrentTaskWithWatchdog), so no configure-by-name call here.
         if (!OTATask::start()) {
             LOG_ERROR(LOG_TAG_MAIN, "Failed to start OTA task");
             return false;
-        } else {
-            // Configure watchdog for OTA task (critical task with 2 second interval)
-            TaskManager::WatchdogConfig otaWdtConfig =
-                TaskManager::WatchdogConfig::enabled(true, 2000);
-            if (!taskManager.configureTaskWatchdog("OTATask", otaWdtConfig)) {
-                LOG_WARN(LOG_TAG_MAIN, "Failed to configure watchdog for OTATask");
-            }
         }
 
         StatusLed::setBlink(1000);  // Back to normal blink
@@ -205,30 +204,12 @@ void loop() {
         LOG_INFO(LOG_TAG_MAIN, "System running for %lu seconds", uptime);
     }
 
-    if (taskManager.isWatchdogInitialized() && millis() - lastWatchdogStats > 60000) {
+    // Per-task watchdog stat getters (getTaskWatchdogStats / isWatchdogInitialized)
+    // were removed from the TaskManager API; logWatchdogStats() now reports the
+    // aggregate watchdog state for all registered tasks.
+    if (millis() - lastWatchdogStats > 60000) {
         lastWatchdogStats = millis();
         taskManager.logWatchdogStats();
-
-        // Add detailed stats for each task
-        uint32_t missedFeeds, totalFeeds;
-
-        // Check SensorTask
-        if (taskManager.getTaskWatchdogStats("SensorTask", missedFeeds, totalFeeds)) {
-            LOG_INFO(LOG_TAG_MAIN, "SensorTask watchdog: %u total feeds, %u missed", totalFeeds,
-                     missedFeeds);
-        }
-
-        // Check MonitoringTask
-        if (taskManager.getTaskWatchdogStats("MonitoringTask", missedFeeds, totalFeeds)) {
-            LOG_INFO(LOG_TAG_MAIN, "MonitoringTask watchdog: %u total feeds, %u missed", totalFeeds,
-                     missedFeeds);
-        }
-
-        // Check OTATask (if it's running)
-        if (taskManager.getTaskWatchdogStats("OTATask", missedFeeds, totalFeeds)) {
-            LOG_INFO(LOG_TAG_MAIN, "OTATask watchdog: %u total feeds, %u missed", totalFeeds,
-                     missedFeeds);
-        }
     }
 
     if (millis() - lastSystemInfoTime > 300000) {
@@ -253,21 +234,10 @@ void printSystemInfo() {
         LOG_INFO(LOG_TAG_MAIN, "Ethernet not connected");
     }
 
-    // Add watchdog statistics here
+    // Add watchdog statistics here. Per-task stat getters were removed from the
+    // TaskManager API; logWatchdogStats() reports the aggregate watchdog state.
     LOG_INFO(LOG_TAG_MAIN, "--- Watchdog Statistics ---");
-    uint32_t missedFeeds, totalFeeds;
-
-    if (taskManager.getTaskWatchdogStats("SensorTask", missedFeeds, totalFeeds)) {
-        LOG_INFO(LOG_TAG_MAIN, "SensorTask: %u feeds, %u missed (%.1f%% success)", totalFeeds,
-                 missedFeeds,
-                 totalFeeds > 0 ? (100.0 * (totalFeeds - missedFeeds) / totalFeeds) : 0);
-    }
-
-    if (taskManager.getTaskWatchdogStats("MonitoringTask", missedFeeds, totalFeeds)) {
-        LOG_INFO(LOG_TAG_MAIN, "MonitoringTask: %u feeds, %u missed (%.1f%% success)", totalFeeds,
-                 missedFeeds,
-                 totalFeeds > 0 ? (100.0 * (totalFeeds - missedFeeds) / totalFeeds) : 0);
-    }
+    taskManager.logWatchdogStats();
 
     LOG_INFO(LOG_TAG_MAIN, "-------------------------");
 }

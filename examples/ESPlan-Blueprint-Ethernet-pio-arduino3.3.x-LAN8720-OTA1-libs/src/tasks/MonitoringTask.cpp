@@ -4,6 +4,7 @@
 #include <SemaphoreGuard.h>
 #include <TaskManager.h>
 #include <esp_system.h>
+#include <esp_task_wdt.h>  // for esp_task_wdt_reset()
 
 extern TaskManager taskManager;  // Ensure global TaskManager is accessible
 
