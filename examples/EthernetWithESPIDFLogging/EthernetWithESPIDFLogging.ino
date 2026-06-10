@@ -32,7 +32,7 @@ void setup() {
     // Create configuration using builder pattern
     EthernetConfig config = EthernetConfig()
         .withHostname("esp32-default-logging")
-        .withAutoReconnect(true, 5, 1000, 30000);
+        .withAutoReconnect(5, 1000, 30000);
     
     // Initialize Ethernet
     Serial.println("Initializing Ethernet...");
@@ -41,8 +41,8 @@ void setup() {
     
     if (!result.isOk()) {
         Serial.print("Ethernet initialization failed! Error: ");
-        Serial.println(EthernetManager::errorToString(result.error));
-        
+        Serial.println(EthernetManager::errorToString(result.error()));
+
         // All error logs are automatically sent to ESP-IDF logging
         // Check serial monitor for ESP_LOGE messages
         return;

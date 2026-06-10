@@ -154,7 +154,7 @@ void serialEvent() {
                 break;
                 
             case 's':
-            case 'S':
+            case 'S': {
                 // Show current statistics
                 Serial.println("\n=== Current Statistics ===");
                 NetworkStats stats = EthernetManager::getStatistics();
@@ -166,6 +166,7 @@ void serialEvent() {
                 Serial.print("Reconnections: ");
                 Serial.println(stats.reconnectCount);
                 break;
+            }
                 
             case '?':
             case 'h':
