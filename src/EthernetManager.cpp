@@ -566,7 +566,8 @@ EthResult<void> EthernetManager::waitForConnection(uint32_t timeout_ms) {
         return EthResult<void>(EthError::NOT_INITIALIZED);
     }
 
-    ETH_LOG_D("Waiting for Ethernet connection (max %ums)...", timeout_ms);
+    ETH_LOG_D("Waiting for Ethernet connection (max %lums)...",
+              static_cast<unsigned long>(timeout_ms));
 
     // Track start time for timeout calculation
     uint32_t startWait = millis();
@@ -599,7 +600,8 @@ EthResult<void> EthernetManager::waitForConnection(uint32_t timeout_ms) {
         }
     }
 
-    ETH_LOG_W("Connection timeout after %u ms", millis() - startWait);
+    ETH_LOG_W("Connection timeout after %lu ms",
+                  static_cast<unsigned long>(millis() - startWait));
     inst.lastError = EthError::CONNECTION_TIMEOUT;
     return EthResult<void>(EthError::CONNECTION_TIMEOUT);
 }
@@ -1044,7 +1046,7 @@ void EthernetManager::onEthEvent(void* arg, esp_event_base_t base, int32_t id, v
     // Track event count for performance metrics
     inst.totalEventCount++;
 
-    ETH_LOG_D("Event: base='%s', id=%d at %lu ms", base, id, millis());
+    ETH_LOG_D("Event: base='%s', id=%ld at %lu ms", base, static_cast<long>(id), millis());
 
     if (base == IP_EVENT && id == IP_EVENT_GOT_IP) {
         ETH_LOG_I("IP_EVENT_GOT_IP received");
@@ -1129,7 +1131,7 @@ void EthernetManager::onEthEvent(void* arg, esp_event_base_t base, int32_t id, v
             }
 
             default:
-                ETH_LOG_W("Unhandled ETH event ID: %d", id);
+                ETH_LOG_W("Unhandled ETH event ID: %ld", static_cast<long>(id));
                 break;
         }
     }
@@ -1152,7 +1154,8 @@ void EthernetManager::setLinkMonitoring(bool enable, uint32_t intervalMs) {
             if (inst.linkMonitorTimer) {
                 xTimerChangePeriod(inst.linkMonitorTimer, pdMS_TO_TICKS(intervalMs), 0);
                 xTimerStart(inst.linkMonitorTimer, 0);
-                ETH_LOG_I("Link monitoring enabled with %u ms interval", intervalMs);
+                ETH_LOG_I("Link monitoring enabled with %lu ms interval",
+              static_cast<unsigned long>(intervalMs));
             }
         } else {
             // Stop timer if running
